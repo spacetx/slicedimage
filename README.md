@@ -18,33 +18,33 @@ Each image set should have a json document that serves as the table of contents 
 
 The TOC should have the following fields:
 
-| Field Name | Type   | Required | Description
------------------------------------------------
-| version    | string | yes      | Semantic versioning of the file format.
-| legend     | dict   | yes      | See [here](#legend)
-| tiles      | dict   | yes      | See [here](#tiles)
-| zoom       | dict   | no       | See [here](#zoom)
-| extras     | dict   | no       | Additional application-specific payload.  The vocabulary and the schema are uncontrolled.
+Field Name | Type   | Required | Description
+---------- | ------ | -------- | --------------
+version    | string | yes      | Semantic versioning of the file format.
+legend     | dict   | yes      | See [here](#legend)
+tiles      | dict   | yes      | See [here](#tiles)
+zoom       | dict   | no       | See [here](#zoom)
+extras     | dict   | no       | Additional application-specific payload.  The vocabulary and the schema are uncontrolled.
 
 ### Legend
 
 The legend should have the following fields:
 
-| Field Name | Type   | Required | Description
------------------------------------------------
-| dimensions | list   | Yes      | Names of the dimensions.
-| default_tile_shape | tuple | No | Default pixel dimensions of a tile, ordered as x, y, and optionally, z.
-| default_tile_format | string | No | Default file format of the tiles.
-| extras     | dict   | no       | Additional application-specific payload.  The vocabulary and the schema are uncontrolled.
+Field Name | Type   | Required | Description
+---------- | ------ | -------- | --------------
+dimensions | list   | Yes      | Names of the dimensions.
+default_tile_shape | tuple | No | Default pixel dimensions of a tile, ordered as x, y, and optionally, z.
+default_tile_format | string | No | Default file format of the tiles.
+extras     | dict   | no       | Additional application-specific payload.  The vocabulary and the schema are uncontrolled.
 
 ### Tiles
 
 Each item in the tiles section describes a file:
 
-| Field Name | Type   | Required | Description
------------------------------------------------
-| file       | string | Yes      | Relative path to the file.
-| coordinates | dict  | Yes      | Maps a dimension name (specified in the [TOC](#TOC)) to either a single dimension value, or a tuple specifying the range for that dimension.  Note that this does not have to be the discrete dimensions like pixels or the z-order, though it can be.
-| tile_shape | tuple  | No       | Pixel dimensions of a tile, ordered as x, y, and optionally, z.  If this is not provided, it defaults to the default_tile_shape in the [TOC](#TOC).  If neither is provided, the tile shape is inferred from actual file.
-| tile_format | string | No      | File format of the tile.  If this is not provided, it defaults to the tile_format in the [TOC](#TOC).  If neither is provided, the tile format is inferred from actual file.
-| extras     | dict   | no       | Additional application-specific payload.  The vocabulary and the schema are uncontrolled.
+Field Name | Type   | Required | Description
+---------- | ------ | -------- | -----------------
+file       | string | Yes      | Relative path to the file.
+coordinates | dict  | Yes      | Maps a dimension name (specified in the [TOC](#TOC)) to either a single dimension value, or a tuple specifying the range for that dimension.  Note that this does not have to be the discrete dimensions like pixels or the z-order, though it can be.
+tile_shape | tuple  | No       | Pixel dimensions of a tile, ordered as x, y, and optionally, z.  If this is not provided, it defaults to the default_tile_shape in the [TOC](#TOC).  If neither is provided, the tile shape is inferred from actual file.
+tile_format | string | No      | File format of the tile.  If this is not provided, it defaults to the tile_format in the [TOC](#TOC).  If neither is provided, the tile format is inferred from actual file.
+extras     | dict   | no       | Additional application-specific payload.  The vocabulary and the schema are uncontrolled.
