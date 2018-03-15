@@ -15,6 +15,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=install_requires,
     entry_points={
-        'console_scripts': "imageslice=imageslice:imageslice"
+        'console_scripts': "imageslice=imageslice:cli"
     }
 )
