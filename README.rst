@@ -59,7 +59,8 @@ The legend should have the following fields:
 ===================  ======  ========  =========================================
 Field Name           Type    Required  Description
 -------------------  ------  --------  -----------------------------------------
-dimensions           list    Yes       Names of the dimensions.
+dimensions           list    Yes       Names of the dimensions.  Dimensions must
+                                       include `x` and `y`.
 default_tile_shape   tuple   No        Default pixel dimensions of a tile,
                                        ordered as x, y, and optionally, z.
 default_tile_format  string  No        Default file format of the tiles.
@@ -84,7 +85,8 @@ coordinates   dict    Yes       Maps a dimension name (specified in the TOC_) to
                                 specifying the range for that dimension.  Note
                                 that this does not have to be the discrete
                                 dimensions like pixels or the z-order, though it
-                                can be.
+                                can be.  The `x` and `y` coordinates must be
+                                provided as ranges.
 tile_shape    tuple   No        Pixel dimensions of a tile, ordered as x, y, and
                                 optionally, z.  If this is not provided, it
                                 defaults to `default_tile_shape` in the TOC_).
