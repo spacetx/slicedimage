@@ -38,35 +38,19 @@ TOC
 
 The TOC should have the following fields:
 
-==========  ======  ========  ==================================================
-Field Name  Type    Required  Description
-----------  ------  --------  --------------------------------------------------
-version     string  yes       Semantic versioning of the file format.
-legend      dict    yes       See Legend_
-tiles       dict    yes       See Tiles_
-zoom        dict    no        See Zoom_
-extras      dict    no        Additional application-specific payload.  The
-                              vocabulary and the schema are uncontrolled.
-==========  ======  ========  ==================================================
-
-.. _Legend:
-
-Legend
-~~~~~~
-
-The legend should have the following fields:
-
 ===================  ======  ========  =========================================
 Field Name           Type    Required  Description
 -------------------  ------  --------  -----------------------------------------
+version              string  Yes       Semantic versioning of the file format.
 dimensions           list    Yes       Names of the dimensions.  Dimensions must
                                        include `x` and `y`.
+tiles                dict    Yes       See Tiles_
 default_tile_shape   tuple   No        Default pixel dimensions of a tile,
                                        ordered as x, y, and optionally, z.
 default_tile_format  string  No        Default file format of the tiles.
-extras               dict    No        Additional application-specific payload.
-                                       The vocabulary and the schema are
-                                       uncontrolled.
+zoom                 dict    No        See Zoom_
+extras               dict    No        Additional application-specific payload.  The
+                                       vocabulary and the schema are uncontrolled.
 ===================  ======  ========  =========================================
 
 .. _Tiles:

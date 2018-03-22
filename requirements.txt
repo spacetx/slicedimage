@@ -1,2 +1,5 @@
-jsonschema
+packaging
+numpy
 requests
+scikit-image
+six
