@@ -2,15 +2,15 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import json
 import os
-import posixpath
 import tempfile
 
 from packaging import version
 from six.moves import urllib
 
+from slicedimage.urlpath import pathsplit
 from .backends import DiskBackend, HttpBackend
 from ._formats import ImageFormat
-from ._imageslice import SlicedImage
+from ._slicedimage import SlicedImage
 from ._tile import Tile
 
 
@@ -31,22 +31,6 @@ def infer_backend(baseurl, allow_caching=True):
     return backend
 
 
-def pathsplit(url):
-    parsed = urllib.parse.urlparse(url)
-    return (
-        urllib.parse.urlunparse(
-            (parsed.scheme,
-             parsed.netloc,
-             posixpath.dirname(parsed.path),
-             parsed.params,
-             parsed.query,
-             parsed.fragment),
-
-        ),
-        posixpath.basename(parsed.path),
-    )
-
-
 class Reader(object):
     @staticmethod
     def parse_doc(url):
@@ -61,6 +45,32 @@ class Reader(object):
             raise ValueError("Unrecognized version number")
 
         return parser.parse(json_doc, baseurl)
+
+    @staticmethod
+    def parse_tile_doc(tile_doc, baseurl):
+        name = tile_doc[TileKeys.FILE]
+        try:
+            base, possible_name = pathsplit(name)
+            backend = infer_backend(base)
+            name = possible_name
+        except ValueError:
+            # this is not a fully qualified url.  convert it to a file:// url.
+            backend = infer_backend(baseurl)
+
+        tile_format = tile_doc.get(TileKeys.TILE_FORMAT, None)
+        if tile_format is None:
+            # Still none :(
+            extension = os.path.splitext(name)[1]
+            tile_format = ImageFormat.find_by_extension(extension).name
+
+        tile = Tile(
+            tile_doc.get(TileKeys.COORDINATES, None),
+            tile_doc.get(TileKeys.TILE_SHAPE, None),
+            tile_doc.get(TileKeys.EXTRAS, None),
+        )
+        tile.set_source_fh_callable(backend.read_file_handle_callable(name, None), ImageFormat[tile_format])
+
+        return tile
 
     def parse(self, json_doc, baseurl):
         raise NotImplementedError()
@@ -101,20 +111,20 @@ class v0_0_0(object):
             imageformat = json_doc.get(TOCKeys.DEFAULT_TILE_FORMAT, None)
             if imageformat is not None:
                 imageformat = ImageFormat[imageformat]
-            imageslice = SlicedImage(
+            slicedimage = SlicedImage(
                 json_doc[TOCKeys.DIMENSIONS],
                 json_doc.get(TOCKeys.DEFAULT_TILE_SHAPE, None),
                 imageformat,
                 json_doc.get(TOCKeys.BASEURL, None),
                 json_doc.get(TOCKeys.EXTRAS, None),
             )
-            if imageslice.baseurl is not None:
-                baseurl = imageslice.baseurl
+            if slicedimage.baseurl is not None:
+                baseurl = slicedimage.baseurl
             backend = infer_backend(baseurl)
 
             for tile_doc in json_doc[TOCKeys.TILES]:
                 name = tile_doc[TileKeys.FILE]
-                tile_format = tile_doc.get(TileKeys.TILE_FORMAT, imageslice.default_tile_format)
+                tile_format = tile_doc.get(TileKeys.TILE_FORMAT, slicedimage.default_tile_format)
                 if tile_format is None:
                     # Still none :(
                     extension = os.path.splitext(name)[1]
@@ -126,9 +136,9 @@ class v0_0_0(object):
                     tile_doc.get(TileKeys.EXTRAS, None),
                 )
                 tile.set_source_fh_callable(backend.read_file_handle_callable(name, None), ImageFormat[tile_format])
-                imageslice.add_tile(tile)
+                slicedimage.add_tile(tile)
 
-            return imageslice
+            return slicedimage
 
     class Writer(Writer):
         def generate_toc(

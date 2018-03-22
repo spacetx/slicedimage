@@ -1,9 +1,10 @@
 import enum
+import functools
 
 
 def skimage_reader():
     # lazy load skimage
-    import skimage
+    import skimage.io
 
     return skimage.io.imread
 

@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import requests
-from six.moves import urllib
 
+from slicedimage.urlpath import pathjoin
 from ._base import Backend
 
 
@@ -12,7 +12,7 @@ class HttpBackend(Backend):
 
     def read_file_handle_callable(self, name, checksum_sha1):
         def returned_callable():
-            parsed = urllib.parse.urljoin(self._baseurl, name)
+            parsed = pathjoin(self._baseurl, name)
             req = requests.get(parsed, stream=True)
             return req.raw
         return returned_callable
