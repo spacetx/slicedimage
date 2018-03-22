@@ -6,7 +6,7 @@ import setuptools
 install_requires = [line.rstrip() for line in open(os.path.join(os.path.dirname(__file__), "requirements.txt"))]
 
 setuptools.setup(
-    name="imageslice",
+    name="slicedimage",
     version="0.0.0",
     description="Library to access sliced imaging data",
     author="Tony Tung",

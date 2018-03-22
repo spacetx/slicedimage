@@ -10,7 +10,7 @@ class DiskBackend(Backend):
         self._basedir = basedir
 
     def read_file_handle_callable(self, name, checksum_sha1):
-        return lambda: open(os.path.join(self._basedir, name), "r")
+        return lambda: open(os.path.join(self._basedir, name), "rb")
 
     def write_file_handle(self, name):
-        return open(os.path.join(self._basedir, name), "w")
+        return open(os.path.join(self._basedir, name), "wb")

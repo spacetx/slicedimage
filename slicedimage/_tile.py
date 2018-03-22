@@ -14,13 +14,32 @@ class Tile(object):
         self.tile_format = None
         self.extras = {} if extras is None else extras
 
-    def set_numpy_array(self, numpy_array):
+    def _load(self):
+        if self._source_fh_callable is not None:
+            assert self._numpy_array is None
+            with self._source_fh_callable() as src_fh:
+                self._numpy_array = self.tile_format.reader_func(src_fh)
+            self._source_fh_callable = None
+            self.tile_format = ImageFormat.NUMPY
+
+    @property
+    def numpy_array(self):
+        self._load()
+        return self._numpy_array
+
+    @numpy_array.setter
+    def numpy_array(self, numpy_array):
         if self.tile_shape is not None:
             assert self.tile_shape == numpy_array.shape
 
         self._source_fh_callable = None
         self._numpy_array = numpy_array
         self.tile_format = ImageFormat.NUMPY
+
+    def set_source_filepath(self, filepath, tile_format):
+        self._source_fh_callable = lambda: open(filepath, "rb")
+        self._numpy_array = None
+        self.tile_format = tile_format
 
     def set_source_fh_callable(self, source_fh_callable, tile_format):
         self._source_fh_callable = source_fh_callable
@@ -33,12 +52,7 @@ class Tile(object):
         """
         import numpy
 
-        if self._source_fh_callable is not None:
-            assert self._numpy_array is None
-            with self._source_fh_callable() as src_fh:
-                self._numpy_array = self.tile_format.reader_func(src_fh)
-            self._source_fh_callable = None
-            self.tile_format = ImageFormat.NUMPY
+        self._load()
 
         numpy.save(dst_fh, self._numpy_array)
 
@@ -54,3 +68,5 @@ class Tile(object):
                 dst_fh.write(data)
             self._source_fh_callable = None
             self.tile_format = ImageFormat.NUMPY
+        else:
+            raise RuntimeError("copy can only be called on a tile that hasn't been decoded.")

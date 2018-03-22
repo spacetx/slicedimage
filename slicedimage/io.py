@@ -10,19 +10,19 @@ from six.moves import urllib
 
 from .backends import DiskBackend, HttpBackend
 from ._formats import ImageFormat
-from ._imageslice import ImageSlice
+from ._imageslice import SlicedImage
 from ._tile import Tile
 
 
-def infer_backend(url, allow_caching=True):
-    parsed = urllib.parse.urlparse(url)
+def infer_backend(baseurl, allow_caching=True):
+    parsed = urllib.parse.urlparse(baseurl)
 
     if parsed.scheme in ("http", "https"):
-        backend = HttpBackend(url)
+        backend = HttpBackend(baseurl)
     elif parsed.scheme == "file":
         backend = DiskBackend(parsed.path)
     else:
-        raise ValueError("Unable to infer backend for url {}".format(url))
+        raise ValueError("Unable to infer backend for url {}".format(baseurl))
 
     if allow_caching:
         # TODO: construct caching backend and return that.
@@ -34,7 +34,7 @@ def infer_backend(url, allow_caching=True):
 def pathsplit(url):
     parsed = urllib.parse.urlparse(url)
     return (
-        urllib.parse.urlunsplit(
+        urllib.parse.urlunparse(
             (parsed.scheme,
              parsed.netloc,
              posixpath.dirname(parsed.path),
@@ -51,7 +51,7 @@ class Reader(object):
     @staticmethod
     def parse_doc(url):
         baseurl, name = pathsplit(url)
-        backend = infer_backend(url, allow_caching=False)
+        backend = infer_backend(baseurl, allow_caching=False)
         fh = backend.read_file_handle(name, None)
         json_doc = json.load(fh)
 
@@ -87,6 +87,7 @@ class Writer(object):
     @staticmethod
     def default_tile_writer(tile, fh):
         tile.write(fh)
+        return ImageFormat.NUMPY
 
     def generate_toc(self, imagestack, path, *args, **kwargs):
         raise NotImplementedError()
@@ -97,10 +98,13 @@ class v0_0_0(object):
 
     class Reader(Reader):
         def parse(self, json_doc, baseurl):
-            imageslice = ImageSlice(
+            imageformat = json_doc.get(TOCKeys.DEFAULT_TILE_FORMAT, None)
+            if imageformat is not None:
+                imageformat = ImageFormat[imageformat]
+            imageslice = SlicedImage(
                 json_doc[TOCKeys.DIMENSIONS],
                 json_doc.get(TOCKeys.DEFAULT_TILE_SHAPE, None),
-                json_doc.get(TOCKeys.DEFAULT_TILE_FORMAT, None),
+                imageformat,
                 json_doc.get(TOCKeys.BASEURL, None),
                 json_doc.get(TOCKeys.EXTRAS, None),
             )
@@ -121,7 +125,7 @@ class v0_0_0(object):
                     tile_doc.get(TileKeys.TILE_SHAPE, None),
                     tile_doc.get(TileKeys.EXTRAS, None),
                 )
-                tile.set_source_fh_callable(backend.read_file_handle_callable(name, None), tile_format)
+                tile.set_source_fh_callable(backend.read_file_handle_callable(name, None), ImageFormat[tile_format])
                 imageslice.add_tile(tile)
 
             return imageslice
@@ -134,6 +138,7 @@ class v0_0_0(object):
                 tile_opener=Writer.default_tile_opener,
                 tile_writer=Writer.default_tile_writer):
             json_doc = {
+                TOCKeys.VERSION: v0_0_0.VERSION,
                 TOCKeys.DIMENSIONS: imagestack.dimensions,
                 TOCKeys.TILES: [],
             }
@@ -141,7 +146,7 @@ class v0_0_0(object):
             if imagestack.default_tile_shape is not None:
                 json_doc[TOCKeys.DEFAULT_TILE_SHAPE] = imagestack.default_tile_shape
             if imagestack.default_tile_format is not None:
-                json_doc[TOCKeys.DEFAULT_TILE_SHAPE] = imagestack.default_tile_format.name
+                json_doc[TOCKeys.DEFAULT_TILE_FORMAT] = imagestack.default_tile_format.name
             if len(imagestack.extras) != 0:
                 json_doc[TOCKeys.EXTRAS] = imagestack.extras
 
@@ -151,13 +156,13 @@ class v0_0_0(object):
                 }
 
                 with tile_opener(path, tile, ImageFormat.NUMPY.file_ext) as tile_fh:
-                    tile_writer(tile, tile_fh)
+                    tile_format = tile_writer(tile, tile_fh)
                     tiledoc[TileKeys.FILE] = os.path.basename(tile_fh.name)
 
                 if tile.tile_shape is not None:
                     tiledoc[TileKeys.TILE_SHAPE] = tile.tile_shape
-                if tile.tile_format is not None:
-                    tiledoc[TileKeys.TILE_FORMAT] = tile.tile_format.name
+                if tile_format is not None:
+                    tiledoc[TileKeys.TILE_FORMAT] = tile_format.name
                 if len(tile.extras) != 0:
                     tiledoc[TileKeys.EXTRAS] = tile.extras
                 json_doc[TOCKeys.TILES].append(tiledoc)
