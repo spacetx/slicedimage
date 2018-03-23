@@ -31,11 +31,29 @@ def infer_backend(baseurl, allow_caching=True):
     return backend
 
 
+def resolve_url(name_or_url, baseurl=None, allow_caching=True):
+    """
+    Given a string that can either be a name or a fully qualified url, return a tuple consisting of:
+    a :py:class:`slicedimage.backends._base.Backend`, the basename of the object, and the baseurl of the object.
+    """
+    try:
+        # assume it's a fully qualified url.
+        splitted = pathsplit(name_or_url)
+        backend = infer_backend(splitted[0], allow_caching)
+        return backend, splitted[1], splitted[0]
+    except ValueError:
+        if baseurl is None:
+            # oh, we have no baseurl.  punt.
+            raise
+        # it's not a fully qualified url.
+        backend = infer_backend(baseurl, allow_caching)
+        return backend, name_or_url, baseurl
+
+
 class Reader(object):
     @staticmethod
-    def parse_doc(url):
-        baseurl, name = pathsplit(url)
-        backend = infer_backend(baseurl, allow_caching=False)
+    def parse_doc(name_or_url, baseurl):
+        backend, name, baseurl = resolve_url(name_or_url, baseurl)
         fh = backend.read_file_handle(name, None)
         json_doc = json.load(fh)
 
@@ -45,32 +63,6 @@ class Reader(object):
             raise ValueError("Unrecognized version number")
 
         return parser.parse(json_doc, baseurl)
-
-    @staticmethod
-    def parse_tile_doc(tile_doc, baseurl):
-        name = tile_doc[TileKeys.FILE]
-        try:
-            base, possible_name = pathsplit(name)
-            backend = infer_backend(base)
-            name = possible_name
-        except ValueError:
-            # this is not a fully qualified url.  convert it to a file:// url.
-            backend = infer_backend(baseurl)
-
-        tile_format = tile_doc.get(TileKeys.TILE_FORMAT, None)
-        if tile_format is None:
-            # Still none :(
-            extension = os.path.splitext(name)[1]
-            tile_format = ImageFormat.find_by_extension(extension).name
-
-        tile = Tile(
-            tile_doc.get(TileKeys.COORDINATES, None),
-            tile_doc.get(TileKeys.TILE_SHAPE, None),
-            tile_doc.get(TileKeys.EXTRAS, None),
-        )
-        tile.set_source_fh_callable(backend.read_file_handle_callable(name, None), ImageFormat[tile_format])
-
-        return tile
 
     def parse(self, json_doc, baseurl):
         raise NotImplementedError()
@@ -115,15 +107,13 @@ class v0_0_0(object):
                 json_doc[TOCKeys.DIMENSIONS],
                 json_doc.get(TOCKeys.DEFAULT_TILE_SHAPE, None),
                 imageformat,
-                json_doc.get(TOCKeys.BASEURL, None),
                 json_doc.get(TOCKeys.EXTRAS, None),
             )
-            if slicedimage.baseurl is not None:
-                baseurl = slicedimage.baseurl
-            backend = infer_backend(baseurl)
 
             for tile_doc in json_doc[TOCKeys.TILES]:
-                name = tile_doc[TileKeys.FILE]
+                name_or_url = tile_doc[TileKeys.FILE]
+                backend, name, _ = resolve_url(name_or_url, baseurl)
+
                 tile_format = tile_doc.get(TileKeys.TILE_FORMAT, slicedimage.default_tile_format)
                 if tile_format is None:
                     # Still none :(
@@ -185,7 +175,6 @@ class TOCKeys(object):
     DIMENSIONS = "dimensions"
     DEFAULT_TILE_SHAPE = "default_tile_shape"
     DEFAULT_TILE_FORMAT = "default_tile_format"
-    BASEURL = "baseurl"
     TILES = "tiles"
     ZOOM = "zoom"
     EXTRAS = "extras"

@@ -7,11 +7,10 @@ from ._tile import Tile
 
 
 class SlicedImage(object):
-    def __init__(self, dimensions, default_tile_shape=None, default_tile_format=None, baseurl=None, extras=None):
+    def __init__(self, dimensions, default_tile_shape=None, default_tile_format=None, extras=None):
         self.dimensions = dimensions
         self.default_tile_shape = default_tile_shape
         self.default_tile_format = None if default_tile_format is None else default_tile_format
-        self.baseurl = baseurl
         self.extras = {} if extras is None else extras
         self._tiles = []
 
@@ -55,7 +54,6 @@ class SlicedImage(object):
             copy(self.dimensions),
             copy(self.default_tile_shape),
             copy(self.default_tile_format),
-            copy(self.baseurl),
             copy(self.extras)
         )
 
