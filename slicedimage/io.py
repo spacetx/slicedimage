@@ -54,7 +54,7 @@ class Reader(object):
     @staticmethod
     def parse_doc(name_or_url, baseurl):
         backend, name, baseurl = resolve_url(name_or_url, baseurl)
-        fh = backend.read_file_handle(name, None)
+        fh = backend.read_file_handle(name)
         json_doc = json.load(fh)
 
         if version.parse(json_doc[TOCKeys.VERSION]) >= version.parse(v0_0_0.VERSION):

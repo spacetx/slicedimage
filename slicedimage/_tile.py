@@ -36,11 +36,6 @@ class Tile(object):
         self._numpy_array = numpy_array
         self.tile_format = ImageFormat.NUMPY
 
-    def set_source_filepath(self, filepath, tile_format):
-        self._source_fh_callable = lambda: open(filepath, "rb")
-        self._numpy_array = None
-        self.tile_format = tile_format
-
     def set_source_fh_callable(self, source_fh_callable, tile_format):
         self._source_fh_callable = source_fh_callable
         self._numpy_array = None
