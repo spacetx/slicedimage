@@ -74,7 +74,7 @@ class Writer(object):
         document = v0_0_0.Writer().generate_toc(imagestack, path, *args, **kwargs)
         indent = 4 if pretty else None
         with open(path, "w") as fh:
-            json.dump(document, fh, indent=indent)
+            json.dump(document, fh, indent=indent, sort_keys=pretty)
 
     @staticmethod
     def default_tile_opener(toc_path, tile, ext):
