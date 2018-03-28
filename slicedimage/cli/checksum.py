@@ -5,28 +5,43 @@ import os
 import sys
 
 from slicedimage import Reader, Writer
+from ._base import CliCommand
 
 
-def checksum(args, print_help):
-    try:
-        slicedimage = Reader.parse_doc(args.in_url, None)
-    except ValueError:
-        if os.path.exists(args.in_url):
-            newurl = "file://{}".format(args.in_url)
-            sys.stderr.write("WARNING: {} is not a url but is a file.  Attempting {}...\n".format(args.in_url, newurl))
-            slicedimage = Reader.parse_doc(newurl, None)
+class ChecksumCommand(CliCommand):
+    @classmethod
+    def register_parser(cls, subparser_root):
+        checksum_command = subparser_root.add_parser("checksum", help="Read a TOC file and add missing checksums.")
+        checksum_command.add_argument("in_url", help="URL for the source TOC file")
+        checksum_command.add_argument("out_path", help="Path to write TOC file with checksums")
+        checksum_command.add_argument("--pretty", action="store_true", help="Pretty-print the output file")
 
-    for tile in slicedimage.get_matching_tiles(lambda candidate_tile: candidate_tile.sha256 is None):
-        hf = HashFile(hashlib.sha256)
-        tile.copy(hf)
-        tile.sha256 = hf.hexdigest()
+        return checksum_command
 
-    Writer.write_to_path(
-        slicedimage,
-        args.out_path,
-        pretty=args.pretty,
-        tile_opener=identity_file_namer,
-        tile_writer=null_writer)
+    @classmethod
+    def run_command(cls, args):
+        try:
+            slicedimage = Reader.parse_doc(args.in_url, None)
+        except ValueError:
+            if os.path.exists(args.in_url):
+                newurl = "file://{}".format(args.in_url)
+                sys.stderr.write(
+                    "WARNING: {} is not a url but is a file.  Attempting {}...\n".format(args.in_url, newurl))
+                slicedimage = Reader.parse_doc(newurl, None)
+            else:
+                raise
+
+        for tile in slicedimage.get_matching_tiles(lambda candidate_tile: candidate_tile.sha256 is None):
+            hf = HashFile(hashlib.sha256)
+            tile.copy(hf)
+            tile.sha256 = hf.hexdigest()
+
+        Writer.write_to_path(
+            slicedimage,
+            args.out_path,
+            pretty=args.pretty,
+            tile_opener=identity_file_namer,
+            tile_writer=null_writer)
 
 
 def identity_file_namer(toc_path, tile, ext):

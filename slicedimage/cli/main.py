@@ -2,24 +2,29 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import argparse
 
-from .checksum import checksum
+from ._base import CliCommand
+from . import checksum
 
 
 def main():
     parser = argparse.ArgumentParser()
 
-    subparsers = parser.add_subparsers(dest="slicedimage_command")
+    subparser_root = parser.add_subparsers(dest="slicedimage_command_class")
 
-    checksum_command = subparsers.add_parser("checksum", help="Read a TOC file and add missing checksums.")
-    checksum_command.add_argument("in_url", help="URL for the source TOC file")
-    checksum_command.add_argument("out_path", help="Path to write TOC file with checksums")
-    checksum_command.add_argument("--pretty", action="store_true", help="Pretty-print the output file")
-    checksum_command.set_defaults(slicedimage_command=checksum)
+    for cls in CliCommand.__subclasses__():
+        subparser = cls.register_parser(subparser_root)
+        subparser.set_defaults(slicedimage_command_class=(cls, subparser))
 
     args, argv = parser.parse_known_args()
 
-    if args.slicedimage_command is None:
+    if args.slicedimage_command_class is None:
         parser.print_help()
         parser.exit(status=2)
 
-    args.slicedimage_command(args, print_help=len(argv) != 0)
+    cls, subparser = args.slicedimage_command_class
+
+    if len(argv) != 0:
+        subparser.print_help()
+        parser.exit(status=2)
+
+    cls.run_command(args)
