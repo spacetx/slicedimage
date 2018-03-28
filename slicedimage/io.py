@@ -122,10 +122,12 @@ class v0_0_0(object):
 
                 tile = Tile(
                     tile_doc[TileKeys.COORDINATES],
-                    tile_doc.get(TileKeys.TILE_SHAPE, None),
-                    tile_doc.get(TileKeys.EXTRAS, None),
+                    tile_shape=tile_doc.get(TileKeys.TILE_SHAPE, None),
+                    sha256=tile_doc.get(TileKeys.SHA256, None),
+                    extras=tile_doc.get(TileKeys.EXTRAS, None),
                 )
                 tile.set_source_fh_callable(backend.read_file_handle_callable(name, None), ImageFormat[tile_format])
+                tile._file_or_url = name_or_url
                 slicedimage.add_tile(tile)
 
             return slicedimage
@@ -161,6 +163,8 @@ class v0_0_0(object):
 
                 if tile.tile_shape is not None:
                     tiledoc[TileKeys.TILE_SHAPE] = tile.tile_shape
+                if tile.sha256 is not None:
+                    tiledoc[TileKeys.SHA256] = tile.sha256
                 if tile_format is not None:
                     tiledoc[TileKeys.TILE_FORMAT] = tile_format.name
                 if len(tile.extras) != 0:
@@ -185,4 +189,5 @@ class TileKeys(object):
     COORDINATES = "coordinates"
     TILE_SHAPE = "tile_shape"
     TILE_FORMAT = "tile_format"
+    SHA256 = "sha256"
     EXTRAS = "extras"

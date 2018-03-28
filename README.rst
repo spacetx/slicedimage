@@ -80,6 +80,7 @@ tile_format   string  No        File format of the tile.  If this is not
                                 provided, it defaults to `default_tile_format`
                                 in the TOC_).  If neither is provided, the tile
                                 format is inferred from actual file.
+sha256        string  No        SHA256 checksum of the tile data.
 extras        dict    No        Additional application-specific payload.  The
                                 vocabulary and the schema are uncontrolled.
 ============  ======  ========  ================================================
