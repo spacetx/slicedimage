@@ -24,7 +24,7 @@ exactly where the tile is in the n-dimensional space.
 Format
 ------
 
-Each image set should have a json document that serves as the table of contents (TOC).  The TOC can either enumerate a list of other TOCs (`TOC partition`_) or describe a list of tiles (`Image shard TOC`_).  The entire image set consists of all the tiles in all of the TOCs referenced by the top-level TOC, directly or indirectly.
+Each image set should have a json document that serves as the table of contents (TOC).  The TOC can either enumerate a list of other TOCs (`TOC partition`_) or describe a list of tiles (`Image partition TOC`_).  The entire image set consists of all the tiles in all of the TOCs referenced by the top-level TOC, directly or indirectly.
 
 .. _`TOC partition`:
 
@@ -42,12 +42,12 @@ extras               dict    No        Additional application-specific payload. 
                                        uncontrolled.
 ===================  ======  ========  =================================================================================
 
-.. _`Image shard TOC`:
+.. _`Image partition TOC`:
 
-Image shard TOC
-~~~~~~~~~~~~~~~
+Image partition TOC
+~~~~~~~~~~~~~~~~~~~
 
-Image shard TOCs should have the following fields:
+Image partition TOCs should have the following fields:
 
 ===================  ======  ========  =================================================================================
 Field Name           Type    Required  Description
@@ -56,7 +56,7 @@ version              string  Yes       Semantic versioning of the file format.
 dimensions           list    Yes       Names of the dimensions.  Dimensions must include `x` and `y`.
 tiles                dict    Yes       See Tiles_
 shape                dict    Yes       Maps each non-geometric dimension to the possible number of values for that
-                                       dimensions for the tiles in this `Image shard TOC`_.
+                                       dimensions for the tiles in this `Image partition TOC`_.
 default_tile_shape   tuple   No        Default pixel dimensions of a tile, ordered as x, y.
 default_tile_format  string  No        Default file format of the tiles.
 zoom                 dict    No        See Zoom_
@@ -78,18 +78,18 @@ file          string  Yes       Relative path to the file.
 coordinates   dict    Yes       Maps one of the dimensions in geometric space, either `x`, `y`, or `z`, to either a
                                 single dimension value, or a tuple specifying the range for that dimension.  The `x` and
                                 `y` coordinates must be provided as ranges.   Each of the dimensions here must be
-                                specified in the `Image shard TOC`_.
+                                specified in the `Image partition TOC`_.
 indices       dict    Yes       Maps one of the dimensions *not* in geometric space to either a single dimension value,
                                 or a tuple specifying the range for that dimension.  Each of the dimensions here must be
-                                specified in the `Image shard TOC`_.  The values of the indices must be non-negative
+                                specified in the `Image partition TOC`_.  The values of the indices must be non-negative
                                 integers, and every value up to but not including the maximum specified in the `shape`
-                                field of the `Image shard TOC`_ must be represented.
+                                field of the `Image partition TOC`_ must be represented.
 tile_shape    tuple   No        Pixel dimensions of a tile, ordered as x, y.  If this is not provided, it defaults to
-                                `default_tile_shape` in the `Image shard TOC`_).  If neither is provided, the tile shape
-                                is inferred from actual file.
+                                `default_tile_shape` in the `Image partition TOC`_).  If neither is provided, the tile
+                                shape is inferred from actual file.
 tile_format   string  No        File format of the tile.  If this is not provided, it defaults to `default_tile_format`
-                                in the `Image shard TOC`_).  If neither is provided, the tile format is inferred from
-                                actual file.
+                                in the `Image partition TOC`_).  If neither is provided, the tile format is inferred
+                                from actual file.
 sha256        string  No        SHA256 checksum of the tile data.
 extras        dict    No        Additional application-specific payload.  The vocabulary and the schema are
                                 uncontrolled.
