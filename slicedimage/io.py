@@ -10,8 +10,9 @@ from six.moves import urllib
 from slicedimage.urlpath import pathsplit
 from .backends import DiskBackend, HttpBackend
 from ._formats import ImageFormat
-from ._slicedimage import SlicedImage
+from ._imagepartition import ImagePartition
 from ._tile import Tile
+from ._tocpartition import TocPartition
 
 
 def infer_backend(baseurl, allow_caching=True):
@@ -57,7 +58,7 @@ class Reader(object):
         fh = backend.read_file_handle(name)
         json_doc = json.load(fh)
 
-        if version.parse(json_doc[TOCKeys.VERSION]) >= version.parse(v0_0_0.VERSION):
+        if version.parse(json_doc[CommonPartitionKeys.VERSION]) >= version.parse(v0_0_0.VERSION):
             parser = v0_0_0.Reader()
         else:
             raise ValueError("Unrecognized version number")
@@ -75,6 +76,16 @@ class Writer(object):
         indent = 4 if pretty else None
         with open(path, "w") as fh:
             json.dump(document, fh, indent=indent, sort_keys=pretty)
+
+    @staticmethod
+    def default_toc_path_generator(toc_path):
+        toc_basename = os.path.splitext(os.path.basename(toc_path))[0]
+        return tempfile.NamedTemporaryFile(
+            suffix=".json",
+            prefix="{}-".format(toc_basename),
+            dir=os.path.dirname(toc_path),
+            delete=False,
+        )
 
     @staticmethod
     def default_tile_opener(toc_path, tile, ext):
@@ -100,93 +111,124 @@ class v0_0_0(object):
 
     class Reader(Reader):
         def parse(self, json_doc, baseurl):
-            imageformat = json_doc.get(TOCKeys.DEFAULT_TILE_FORMAT, None)
-            if imageformat is not None:
-                imageformat = ImageFormat[imageformat]
-            slicedimage = SlicedImage(
-                json_doc[TOCKeys.DIMENSIONS],
-                json_doc.get(TOCKeys.DEFAULT_TILE_SHAPE, None),
-                imageformat,
-                json_doc.get(TOCKeys.EXTRAS, None),
-            )
-
-            for tile_doc in json_doc[TOCKeys.TILES]:
-                name_or_url = tile_doc[TileKeys.FILE]
-                backend, name, _ = resolve_url(name_or_url, baseurl)
-
-                tile_format = tile_doc.get(TileKeys.TILE_FORMAT, slicedimage.default_tile_format)
-                if tile_format is None:
-                    # Still none :(
-                    extension = os.path.splitext(name)[1]
-                    tile_format = ImageFormat.find_by_extension(extension).name
-
-                tile = Tile(
-                    tile_doc[TileKeys.COORDINATES],
-                    tile_shape=tile_doc.get(TileKeys.TILE_SHAPE, None),
-                    sha256=tile_doc.get(TileKeys.SHA256, None),
-                    extras=tile_doc.get(TileKeys.EXTRAS, None),
+            if TocPartitionKeys.TOCS in json_doc:
+                # this is a TocPartition
+                result = TocPartition(json_doc.get(CommonPartitionKeys.EXTRAS, None))
+                for name_or_url in json_doc[TocPartitionKeys.TOCS]:
+                    toc = Reader.parse_doc(name_or_url, baseurl)
+                    toc._name_or_url = name_or_url
+                    result.add_toc(toc)
+            elif ImagePartitionKeys.TILES in json_doc:
+                imageformat = json_doc.get(ImagePartitionKeys.DEFAULT_TILE_FORMAT, None)
+                if imageformat is not None:
+                    imageformat = ImageFormat[imageformat]
+                result = ImagePartition(
+                    json_doc[ImagePartitionKeys.DIMENSIONS],
+                    json_doc.get(ImagePartitionKeys.DEFAULT_TILE_SHAPE, None),
+                    imageformat,
+                    json_doc.get(ImagePartitionKeys.EXTRAS, None),
                 )
-                tile.set_source_fh_callable(backend.read_file_handle_callable(name, None), ImageFormat[tile_format])
-                tile._file_or_url = name_or_url
-                slicedimage.add_tile(tile)
 
-            return slicedimage
+                for tile_doc in json_doc[ImagePartitionKeys.TILES]:
+                    name_or_url = tile_doc[TileKeys.FILE]
+                    backend, name, _ = resolve_url(name_or_url, baseurl)
+
+                    tile_format = tile_doc.get(TileKeys.TILE_FORMAT, result.default_tile_format)
+                    if tile_format is None:
+                        # Still none :(
+                        extension = os.path.splitext(name)[1]
+                        tile_format = ImageFormat.find_by_extension(extension).name
+
+                    tile = Tile(
+                        tile_doc[TileKeys.COORDINATES],
+                        tile_doc[TileKeys.INDICES],
+                        tile_shape=tile_doc.get(TileKeys.TILE_SHAPE, None),
+                        sha256=tile_doc.get(TileKeys.SHA256, None),
+                        extras=tile_doc.get(TileKeys.EXTRAS, None),
+                    )
+                    tile.set_source_fh_callable(backend.read_file_handle_callable(name, None), ImageFormat[tile_format])
+                    tile._file_or_url = name_or_url
+                    result.add_tile(tile)
+
+            return result
 
     class Writer(Writer):
         def generate_toc(
                 self,
                 imagestack,
                 path,
+                toc_path_generator=Writer.default_toc_path_generator,
                 tile_opener=Writer.default_tile_opener,
                 tile_writer=Writer.default_tile_writer):
             json_doc = {
-                TOCKeys.VERSION: v0_0_0.VERSION,
-                TOCKeys.DIMENSIONS: imagestack.dimensions,
-                TOCKeys.TILES: [],
+                CommonPartitionKeys.VERSION: v0_0_0.VERSION,
+                CommonPartitionKeys.EXTRAS: imagestack.extras,
             }
-            
-            if imagestack.default_tile_shape is not None:
-                json_doc[TOCKeys.DEFAULT_TILE_SHAPE] = imagestack.default_tile_shape
-            if imagestack.default_tile_format is not None:
-                json_doc[TOCKeys.DEFAULT_TILE_FORMAT] = imagestack.default_tile_format.name
-            if len(imagestack.extras) != 0:
-                json_doc[TOCKeys.EXTRAS] = imagestack.extras
+            if isinstance(imagestack, TocPartition):
+                for toc in imagestack._tocs:
+                    tocpath = toc_path_generator(path, toc)
+                    Writer.write_to_path(
+                        toc, tocpath,
+                        toc_path_generator=toc_path_generator,
+                        tile_opener=tile_opener,
+                        tile_Writer=tile_writer
+                    )
+                return json_doc
+            elif isinstance(imagestack, ImagePartition):
+                json_doc[ImagePartitionKeys.DIMENSIONS] = imagestack.dimensions
+                json_doc[ImagePartitionKeys.TILES] = []
 
-            for tile in imagestack._tiles:
-                tiledoc = {
-                    TileKeys.COORDINATES: tile.coordinates,
-                }
+                if imagestack.default_tile_shape is not None:
+                    json_doc[ImagePartitionKeys.DEFAULT_TILE_SHAPE] = imagestack.default_tile_shape
+                if imagestack.default_tile_format is not None:
+                    json_doc[ImagePartitionKeys.DEFAULT_TILE_FORMAT] = imagestack.default_tile_format.name
+                if len(imagestack.extras) != 0:
+                    json_doc[ImagePartitionKeys.EXTRAS] = imagestack.extras
 
-                with tile_opener(path, tile, ImageFormat.NUMPY.file_ext) as tile_fh:
-                    tile_format = tile_writer(tile, tile_fh)
-                    tiledoc[TileKeys.FILE] = os.path.basename(tile_fh.name)
+                for tile in imagestack._tiles:
+                    tiledoc = {
+                        TileKeys.COORDINATES: tile.coordinates,
+                        TileKeys.INDICES: tile.indices,
+                    }
 
-                if tile.tile_shape is not None:
-                    tiledoc[TileKeys.TILE_SHAPE] = tile.tile_shape
-                if tile.sha256 is not None:
-                    tiledoc[TileKeys.SHA256] = tile.sha256
-                if tile_format is not None:
-                    tiledoc[TileKeys.TILE_FORMAT] = tile_format.name
-                if len(tile.extras) != 0:
-                    tiledoc[TileKeys.EXTRAS] = tile.extras
-                json_doc[TOCKeys.TILES].append(tiledoc)
+                    with tile_opener(path, tile, ImageFormat.NUMPY.file_ext) as tile_fh:
+                        tile_format = tile_writer(tile, tile_fh)
+                        tiledoc[TileKeys.FILE] = os.path.basename(tile_fh.name)
 
-            return json_doc
+                    if tile.tile_shape is not None:
+                        tiledoc[TileKeys.TILE_SHAPE] = tile.tile_shape
+                    if tile.sha256 is not None:
+                        tiledoc[TileKeys.SHA256] = tile.sha256
+                    if tile_format is not None:
+                        tiledoc[TileKeys.TILE_FORMAT] = tile_format.name
+                    if len(tile.extras) != 0:
+                        tiledoc[TileKeys.EXTRAS] = tile.extras
+                    json_doc[ImagePartitionKeys.TILES].append(tiledoc)
+
+                return json_doc
 
 
-class TOCKeys(object):
+class CommonPartitionKeys(object):
     VERSION = "version"
+    EXTRAS = "extras"
+
+
+class TocPartitionKeys(CommonPartitionKeys):
+    TOCS = "tocs"
+
+
+class ImagePartitionKeys(CommonPartitionKeys):
     DIMENSIONS = "dimensions"
     DEFAULT_TILE_SHAPE = "default_tile_shape"
     DEFAULT_TILE_FORMAT = "default_tile_format"
     TILES = "tiles"
     ZOOM = "zoom"
-    EXTRAS = "extras"
 
 
 class TileKeys(object):
     FILE = "file"
     COORDINATES = "coordinates"
+    INDICES = "indices"
     TILE_SHAPE = "tile_shape"
     TILE_FORMAT = "tile_format"
     SHA256 = "sha256"

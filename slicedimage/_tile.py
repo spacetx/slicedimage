@@ -6,8 +6,9 @@ from ._formats import ImageFormat
 
 
 class Tile(object):
-    def __init__(self, coordinates, tile_shape=None, sha256=None, extras=None):
+    def __init__(self, coordinates, indices, tile_shape=None, sha256=None, extras=None):
         self.coordinates = coordinates
+        self.indices = indices
         self.tile_shape = tile_shape
         self.sha256 = sha256
         self.extras = {} if extras is None else extras
@@ -15,7 +16,7 @@ class Tile(object):
         self.tile_format = None
         self._source_fh_callable = None
         self._numpy_array = None
-        self._file_or_url = None
+        self._name_or_url = None
 
     def _load(self):
         if self._source_fh_callable is not None:
