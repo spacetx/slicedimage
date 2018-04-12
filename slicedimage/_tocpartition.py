@@ -1,6 +1,6 @@
 from copy import copy
 
-from _imagepartition import ImagePartition
+from ._imagepartition import ImagePartition
 
 
 class TocPartition(object):
