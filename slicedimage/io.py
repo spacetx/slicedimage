@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import codecs
 import json
 import os
 import tempfile
@@ -56,7 +57,8 @@ class Reader(object):
     def parse_doc(name_or_url, baseurl):
         backend, name, baseurl = resolve_url(name_or_url, baseurl)
         fh = backend.read_file_handle(name)
-        json_doc = json.load(fh)
+        reader = codecs.getreader("utf-8")
+        json_doc = json.load(reader(fh))
 
         if version.parse(json_doc[CommonPartitionKeys.VERSION]) >= version.parse(v0_0_0.VERSION):
             parser = v0_0_0.Reader()
