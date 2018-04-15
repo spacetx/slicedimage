@@ -4,7 +4,7 @@ from ._formats import ImageFormat
 from ._imagepartition import ImagePartition
 from ._tile import Tile
 from ._tocpartition import TocPartition
-from .io import Reader, Writer
+from .io import Reader, Writer, v0_0_0
 
 
 __all__ = [
@@ -14,4 +14,5 @@ __all__ = [
     Tile,
     TocPartition,
     Writer,
+    v0_0_0,
 ]
