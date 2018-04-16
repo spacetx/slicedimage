@@ -44,6 +44,7 @@ class ImagePartition(object):
         for tile in self._tiles:
             tile_copy = Tile(
                 copy(tile.coordinates),
+                copy(tile.indices),
                 tile_shape=copy(tile.tile_shape),
                 sha256=copy(tile.sha256),
                 extras=copy(tile.extras),
