@@ -125,7 +125,8 @@ class v0_0_0(object):
                 if imageformat is not None:
                     imageformat = ImageFormat[imageformat]
                 result = ImagePartition(
-                    json_doc[ImagePartitionKeys.DIMENSIONS],
+                    tuple(json_doc[ImagePartitionKeys.DIMENSIONS]),
+                    json_doc[ImagePartitionKeys.SHAPE],
                     json_doc.get(ImagePartitionKeys.DEFAULT_TILE_SHAPE, None),
                     imageformat,
                     json_doc.get(ImagePartitionKeys.EXTRAS, None),
@@ -178,6 +179,7 @@ class v0_0_0(object):
                 return json_doc
             elif isinstance(imagestack, ImagePartition):
                 json_doc[ImagePartitionKeys.DIMENSIONS] = imagestack.dimensions
+                json_doc[ImagePartitionKeys.SHAPE] = imagestack.shape
                 json_doc[ImagePartitionKeys.TILES] = []
 
                 if imagestack.default_tile_shape is not None:
@@ -221,6 +223,7 @@ class TocPartitionKeys(CommonPartitionKeys):
 
 class ImagePartitionKeys(CommonPartitionKeys):
     DIMENSIONS = "dimensions"
+    SHAPE = "shape"
     DEFAULT_TILE_SHAPE = "default_tile_shape"
     DEFAULT_TILE_FORMAT = "default_tile_format"
     TILES = "tiles"
