@@ -5,9 +5,9 @@ from ._tile import Tile
 
 class ImagePartition(object):
     def __init__(self, dimensions, shape, default_tile_shape=None, default_tile_format=None, extras=None):
-        self.dimensions = dimensions
+        self.dimensions = tuple(dimensions)
         self.shape = shape
-        self.default_tile_shape = default_tile_shape
+        self.default_tile_shape = tuple(default_tile_shape)
         self.default_tile_format = None if default_tile_format is None else default_tile_format
         self.extras = {} if extras is None else extras
         self._tiles = []

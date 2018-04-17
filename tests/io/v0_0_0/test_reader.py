@@ -1,3 +1,4 @@
+import collections
 import os
 import sys
 import unittest
@@ -44,3 +45,9 @@ class TestReader(unittest.TestCase):
                         break
                 else:
                     self.fail("Couldn't find tile of hyb {} ch {}".format(hyb, ch))
+
+        for tile in tiles:
+            for value in tile.coordinates.values():
+                self.assertTrue(isinstance(value, collections.Hashable))
+            for value in tile.indices.values():
+                self.assertTrue(isinstance(value, collections.Hashable))
