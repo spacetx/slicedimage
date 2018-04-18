@@ -40,8 +40,13 @@ class Tile(object):
         self._numpy_array = numpy_array
         self.tile_format = ImageFormat.NUMPY
 
-    def set_source_fh_callable(self, source_fh_callable, tile_format):
-        self._source_fh_callable = source_fh_callable
+    def set_source_fh_contextmanager(self, source_fh_contextmanager, tile_format):
+        """
+        Provides a tile with a callable, which should yield a context manager that returns a file-like object.  If the
+        tile data is requested, the context manager is invoked and the data is read from the returned file-like object.
+        It is possible that the context manager is never invoked.
+        """
+        self._source_fh_callable = source_fh_contextmanager
         self._numpy_array = None
         self.tile_format = tile_format
 
