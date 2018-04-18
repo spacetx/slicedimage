@@ -24,10 +24,10 @@ class TocPartition(object):
                 result.append(toc)
         return result
 
-    def get_matching_tiles(self, matcher=None):
+    def filter_tiles(self, filter_fn=None):
         result = []
         for toc in self.all_tocs():
-            result.extend(toc.get_matching_tiles(matcher))
+            result.extend(toc.filter_tiles(filter_fn))
         return result
 
     def clone_shape(self):

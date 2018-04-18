@@ -20,10 +20,10 @@ class ImagePartition(object):
     def add_tile(self, tile):
         self._tiles.append(tile)
 
-    def get_matching_tiles(self, matcher=None):
-        if matcher is None:
+    def filter_tiles(self, filter_fn=None):
+        if filter_fn is None:
             return self._tiles
-        return [tile for tile in self._tiles if matcher(tile)]
+        return [tile for tile in self._tiles if filter_fn(tile)]
 
     def get_dimension_shape(self, dimension_name):
         return self.shape[dimension_name]

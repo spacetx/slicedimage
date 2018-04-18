@@ -19,21 +19,21 @@ class TestReader(unittest.TestCase):
         result = slicedimage.Reader.parse_doc("imagepartition.json", baseurl)
         self.assertIsInstance(result, slicedimage.ImagePartition)
         self.assertEqual(result.shape, {'hyb': 4, 'ch': 4})
-        self._verify_tiles(result.get_matching_tiles())
+        self._verify_tiles(result.filter_tiles())
 
     def test_read_tocpartition(self):
         result = slicedimage.Reader.parse_doc("tocpartition_l1.json", baseurl)
         self.assertIsInstance(result, slicedimage.TocPartition)
         self.assertEqual(len(result.all_tocs()), 1)
         self.assertEqual(result.all_tocs()[0].shape, {'hyb': 4, 'ch': 4})
-        self._verify_tiles(result.get_matching_tiles())
+        self._verify_tiles(result.filter_tiles())
 
     def test_read_multilevel_tpartition(self):
         result = slicedimage.Reader.parse_doc("tocpartition_l2.json", baseurl)
         self.assertIsInstance(result, slicedimage.TocPartition)
         self.assertEqual(len(result.all_tocs()), 1)
         self.assertEqual(result.all_tocs()[0].shape, {'hyb': 4, 'ch': 4})
-        self._verify_tiles(result.get_matching_tiles())
+        self._verify_tiles(result.filter_tiles())
 
     def _verify_tiles(self, tiles):
         self.assertEqual(len(tiles), 16)
