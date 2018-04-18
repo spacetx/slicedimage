@@ -1,6 +1,4 @@
-from copy import copy
-
-from ._tile import Tile
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 
 class ImagePartition(object):
@@ -27,29 +25,3 @@ class ImagePartition(object):
 
     def get_dimension_shape(self, dimension_name):
         return self.shape[dimension_name]
-
-    def clone_shape(self):
-        """
-        Builds and returns a clone with the same tile structure as this ImagePartition.  The clone's tiles will not
-        contain any image data.
-        """
-        result = ImagePartition(
-            copy(self.dimensions),
-            copy(self.shape),
-            default_tile_shape=copy(self.default_tile_shape),
-            default_tile_format=copy(self.default_tile_format),
-            extras=copy(self.extras)
-        )
-
-        for tile in self._tiles:
-            tile_copy = Tile(
-                copy(tile.coordinates),
-                copy(tile.indices),
-                tile_shape=copy(tile.tile_shape),
-                sha256=copy(tile.sha256),
-                extras=copy(tile.extras),
-            )
-            tile_copy._name_or_url = tile._name_or_url
-            result.add_tile(tile_copy)
-
-        return result

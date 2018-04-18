@@ -1,4 +1,4 @@
-from copy import copy
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from ._imagepartition import ImagePartition
 
@@ -28,17 +28,4 @@ class TocPartition(object):
         result = []
         for toc in self.all_tocs():
             result.extend(toc.filter_tiles(filter_fn))
-        return result
-
-    def clone_shape(self):
-        """
-        Builds and returns a clone with the same tile structure as this TocPartition.  The clone's tiles will not
-        contain any image data.
-        """
-        result = TocPartition(extras=copy(self.extras))
-        for toc in self._tocs:
-            clone = toc.clone_shape()
-            clone._name_or_url = toc._name_or_url
-            result.add_toc(clone)
-
         return result
