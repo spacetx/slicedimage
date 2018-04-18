@@ -149,11 +149,11 @@ class v0_0_0(object):
                         sha256=tile_doc.get(TileKeys.SHA256, None),
                         extras=tile_doc.get(TileKeys.EXTRAS, None),
                     )
-                    tile.set_source_fh_contextmanager(
-                        backend.read_file_handle_callable(name, None),
-                        ImageFormat[tile_format])
+                    tile.set_source_fh_contextmanager(backend.read_file_handle_callable(name), ImageFormat[tile_format])
                     tile._file_or_url = name_or_url
                     result.add_tile(tile)
+            else:
+                raise ValueError("json doc does not appear to be a TOC partition or an image partition")
 
             return result
 
