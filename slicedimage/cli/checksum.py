@@ -31,7 +31,7 @@ class ChecksumCommand(CliCommand):
             else:
                 raise
 
-        for tile in slicedimage.filter_tiles(lambda candidate_tile: candidate_tile.sha256 is None):
+        for tile in slicedimage.tiles(lambda candidate_tile: candidate_tile.sha256 is None):
             hf = HashFile(hashlib.sha256)
             tile.copy(hf)
             tile.sha256 = hf.hexdigest()

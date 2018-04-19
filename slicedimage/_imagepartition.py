@@ -18,9 +18,11 @@ class ImagePartition(object):
     def add_tile(self, tile):
         self._tiles.append(tile)
 
-    def filter_tiles(self, filter_fn=None):
-        if filter_fn is None:
-            return self._tiles
+    def tiles(self, filter_fn=lambda tile: True):
+        """
+        Return the tiles in this image partition.  If a filter_fn is provided, only the tiles for which filter_fn
+        returns True are returned.
+        """
         return [tile for tile in self._tiles if filter_fn(tile)]
 
     def get_dimension_shape(self, dimension_name):

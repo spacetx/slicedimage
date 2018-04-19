@@ -55,7 +55,7 @@ class TestWrite(unittest.TestCase):
 
             for hyb in range(2):
                 for ch in range(2):
-                    tiles = loaded.filter_tiles(
+                    tiles = loaded.tiles(
                         lambda tile: tile.indices['hyb'] == hyb and tile.indices['ch'] == ch)
 
                     self.assertEqual(len(tiles), 1)
