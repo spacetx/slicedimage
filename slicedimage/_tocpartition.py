@@ -24,7 +24,7 @@ class TocPartition(object):
                 result.append(toc)
         return result
 
-    def tiles(self, filter_fn=None):
+    def tiles(self, filter_fn=lambda _: True):
         result = []
         for toc in self.all_tocs():
             result.extend(toc.tiles(filter_fn))

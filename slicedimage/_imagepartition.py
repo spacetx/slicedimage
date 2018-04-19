@@ -18,7 +18,7 @@ class ImagePartition(object):
     def add_tile(self, tile):
         self._tiles.append(tile)
 
-    def tiles(self, filter_fn=lambda tile: True):
+    def tiles(self, filter_fn=lambda _: True):
         """
         Return the tiles in this image partition.  If a filter_fn is provided, only the tiles for which filter_fn
         returns True are returned.
