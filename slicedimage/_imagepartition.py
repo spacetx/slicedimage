@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 class ImagePartition(object):
     def __init__(self, dimensions, shape, default_tile_shape=None, default_tile_format=None, extras=None):
-        self.dimensions = tuple(dimensions)
+        self.dimensions = frozenset(dimensions)
         self.shape = shape
         self.default_tile_shape = tuple(default_tile_shape)
         self.default_tile_format = None if default_tile_format is None else default_tile_format
