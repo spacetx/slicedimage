@@ -180,7 +180,7 @@ class v0_0_0(object):
                     )
                 return json_doc
             elif isinstance(imagestack, ImagePartition):
-                json_doc[ImagePartitionKeys.DIMENSIONS] = list(imagestack.dimensions)
+                json_doc[ImagePartitionKeys.DIMENSIONS] = tuple(imagestack.dimensions)
                 json_doc[ImagePartitionKeys.SHAPE] = imagestack.shape
                 json_doc[ImagePartitionKeys.TILES] = []
 
