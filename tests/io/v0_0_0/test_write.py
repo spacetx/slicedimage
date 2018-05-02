@@ -22,7 +22,7 @@ class TestWrite(unittest.TestCase):
     def test_write_imagepartition(self):
         image = slicedimage.ImagePartition(
             ["x", "y", "ch", "hyb"],
-            (2, 2),
+            {'ch': 2, 'hyb': 2},
             (100, 100),
         )
 
