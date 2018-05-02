@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import codecs
+import hashlib
 import json
 import os
 import tempfile
@@ -198,13 +199,20 @@ class v0_0_0(object):
                     }
 
                     with tile_opener(path, tile, ImageFormat.NUMPY.file_ext) as tile_fh:
-                        tile_format = tile_writer(tile, tile_fh)
+                        if tile.sha256 is None:
+                            hasher_fh = HashFile(hashlib.sha256)
+                            writer_fh = TeeWritableFileObject(tile_fh, hasher_fh)
+                        else:
+                            hasher_fh = None
+                            writer_fh = tile_fh
+                        tile_format = tile_writer(tile, writer_fh)
                         tiledoc[TileKeys.FILE] = os.path.basename(tile_fh.name)
+                        if hasher_fh is not None:
+                            tile.sha256 = hasher_fh.hexdigest().lower()
 
                     if tile.tile_shape is not None:
                         tiledoc[TileKeys.TILE_SHAPE] = tile.tile_shape
-                    if tile.sha256 is not None:
-                        tiledoc[TileKeys.SHA256] = tile.sha256
+                    tiledoc[TileKeys.SHA256] = tile.sha256
                     if tile_format is not None:
                         tiledoc[TileKeys.TILE_FORMAT] = tile_format.name
                     if len(tile.extras) != 0:
@@ -212,6 +220,36 @@ class v0_0_0(object):
                     json_doc[ImagePartitionKeys.TILES].append(tiledoc)
 
                 return json_doc
+
+
+class HashFile(object):
+    def __init__(self, hash_constructor):
+        self.hasher = hash_constructor()
+
+    def write(self, data):
+        self.hasher.update(data)
+        return len(data)
+
+    def digest(self):
+        return self.hasher.digest()
+
+    def hexdigest(self):
+        return self.hasher.hexdigest()
+
+
+class TeeWritableFileObject(object):
+    def __init__(self, *backingfiles):
+        self.backingfiles = backingfiles
+
+    def write(self, data):
+        for backingfile in self.backingfiles:
+            backingfile.write(data)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        pass
 
 
 class CommonPartitionKeys(object):

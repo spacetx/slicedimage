@@ -64,3 +64,4 @@ class TestWrite(unittest.TestCase):
                     expected[hyb, ch] = 1
 
                     self.assertEqual(tiles[0].numpy_array.all(), expected.all())
+                    self.assertIsNotNone(tiles[0].sha256)

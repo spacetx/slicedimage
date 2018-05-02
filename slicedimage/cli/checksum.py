@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import hashlib
 import os
 import sys
 
@@ -31,11 +30,6 @@ class ChecksumCommand(CliCommand):
             else:
                 raise
 
-        for tile in slicedimage.tiles(lambda candidate_tile: candidate_tile.sha256 is None):
-            hf = HashFile(hashlib.sha256)
-            tile.copy(hf)
-            tile.sha256 = hf.hexdigest()
-
         Writer.write_to_path(
             slicedimage,
             args.out_path,
@@ -60,18 +54,3 @@ def identity_file_namer(toc_path, tile, ext):
 
 def null_writer(tile, fh):
     pass
-
-
-class HashFile(object):
-    def __init__(self, hash_constructor):
-        self.hasher = hash_constructor()
-
-    def write(self, data):
-        self.hasher.update(data)
-        return len(data)
-
-    def digest(self):
-        return self.hasher.digest()
-
-    def hexdigest(self):
-        return self.hasher.hexdigest()
