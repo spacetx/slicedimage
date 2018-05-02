@@ -1,10 +1,13 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 
+from ._typeformatting import format_imagepartition_dimensions, format_imagepartition_shape
+
+
 class ImagePartition(object):
     def __init__(self, dimensions, shape, default_tile_shape=None, default_tile_format=None, extras=None):
-        self.dimensions = frozenset(dimensions)
-        self.shape = shape
+        self.dimensions = format_imagepartition_dimensions(dimensions)
+        self.shape = format_imagepartition_shape(shape)
         self.default_tile_shape = tuple(default_tile_shape)
         self.default_tile_format = None if default_tile_format is None else default_tile_format
         self.extras = {} if extras is None else extras

@@ -3,12 +3,13 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from six import BytesIO
 
 from ._formats import ImageFormat
+from ._typeformatting import format_tile_dimensions
 
 
 class Tile(object):
     def __init__(self, coordinates, indices, tile_shape=None, sha256=None, extras=None):
-        self.coordinates = dictvalues_to_tuples(coordinates)
-        self.indices = dictvalues_to_tuples(indices)
+        self.coordinates = format_tile_dimensions(coordinates)
+        self.indices = format_tile_dimensions(indices)
         self.tile_shape = tile_shape
         self.sha256 = sha256
         self.extras = {} if extras is None else extras
@@ -74,18 +75,3 @@ class Tile(object):
             self.tile_format = ImageFormat.NUMPY
         else:
             raise RuntimeError("copy can only be called on a tile that hasn't been decoded.")
-
-
-def dictvalues_to_tuples(d):
-    """
-    Given a dictionary mapping names to values that may either be iterables or not, return a new dictionary with the
-    same contents, except the values that are iterables are converted to tuples.
-    """
-    result = dict()
-    for name, value in d.items():
-        try:
-            iter(value)
-            result[name] = tuple(value)
-        except TypeError:
-            result[name] = value
-    return result
