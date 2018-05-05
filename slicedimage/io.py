@@ -137,11 +137,15 @@ class v0_0_0(object):
                     name_or_url = tile_doc[TileKeys.FILE]
                     backend, name, _ = resolve_url(name_or_url, baseurl)
 
-                    tile_format = tile_doc.get(TileKeys.TILE_FORMAT, result.default_tile_format)
+                    tile_format_str = tile_doc.get(TileKeys.TILE_FORMAT, None)
+                    if tile_format_str:
+                        tile_format = ImageFormat[tile_format_str]
+                    else:
+                        tile_format = result.default_tile_format
                     if tile_format is None:
                         # Still none :(
                         extension = os.path.splitext(name)[1]
-                        tile_format = ImageFormat.find_by_extension(extension).name
+                        tile_format = ImageFormat.find_by_extension(extension)
 
                     tile = Tile(
                         tile_doc[TileKeys.COORDINATES],
@@ -150,7 +154,7 @@ class v0_0_0(object):
                         sha256=tile_doc.get(TileKeys.SHA256, None),
                         extras=tile_doc.get(TileKeys.EXTRAS, None),
                     )
-                    tile.set_source_fh_contextmanager(backend.read_file_handle_callable(name), ImageFormat[tile_format])
+                    tile.set_source_fh_contextmanager(backend.read_file_handle_callable(name), tile_format)
                     tile._file_or_url = name_or_url
                     result.add_tile(tile)
             else:
