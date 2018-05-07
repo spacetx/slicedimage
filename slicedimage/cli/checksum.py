@@ -22,7 +22,7 @@ class ChecksumCommand(CliCommand):
         try:
             slicedimage = Reader.parse_doc(args.in_url, None)
         except ValueError:
-            if os.path.exists(args.in_url):
+            if os.path.isfile(args.in_url):
                 newurl = "file://{}".format(args.in_url)
                 sys.stderr.write(
                     "WARNING: {} is not a url but is a file.  Attempting {}...\n".format(args.in_url, newurl))

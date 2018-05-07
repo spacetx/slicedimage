@@ -16,13 +16,12 @@ class TocPartition(object):
 
     def all_tocs(self):
         """Return all TOCs referenced by this TOC, directly or indirectly."""
-        result = []
         for toc in self._tocs:
             if isinstance(toc, TocPartition):
-                result.extend(toc.all_tocs())
+                for subtoc in toc.all_tocs():
+                    yield subtoc
             elif isinstance(toc, ImagePartition):
-                result.append(toc)
-        return result
+                yield toc
 
     def tiles(self, filter_fn=lambda _: True):
         result = []
