@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import sys
@@ -8,16 +9,16 @@ import numpy as np
 import requests
 import skimage.io
 
+import slicedimage
 
 pkg_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))  # noqa
 sys.path.insert(0, pkg_root)  # noqa
 
-import slicedimage
 from tests.utils import build_skeleton_manifest, ContextualChildProcess, \
     TemporaryDirectory, unused_tcp_port
 
 
-class TestHttpBackend(unittest.TestCase):
+class TestCachingBackend(unittest.TestCase):
     def setUp(self, timeout_seconds=5):
         self.contexts = []
         self.tempdir = TemporaryDirectory()
@@ -54,17 +55,17 @@ class TestHttpBackend(unittest.TestCase):
         for context in self.contexts:
             context.__exit__(*sys.exc_info())
 
-    def test_tiff(self):
+    def test_cached_backend(self):
         """
         Generate a tileset consisting of a single TIFF tile.  Deposit it where the HTTP server can
-        find the tileset, and fetch it.
+        find the tileset, and fetch it. Then delete the TIFF file and re-run Reader.parse_doc with
+        the same url and manifest to make sure we get the same results pulling the file
+        from the cache
         """
         # write the tiff file
         data = np.random.randint(0, 65535, size=(100, 100), dtype=np.uint16)
         skimage.io.imsave(os.path.join(self.tempdir.name, "tile.tiff"), data, plugin="tifffile")
-
-        # TODO: (ttung) We should really be producing a tileset programmatically and writing it
-        # disk.  However, our current write path only produces numpy output files.
+        checksum = hashlib.sha256(data).hexdigest()
         manifest = build_skeleton_manifest()
         manifest['tiles'].append(
             {
@@ -84,6 +85,7 @@ class TestHttpBackend(unittest.TestCase):
                 },
                 "file": "tile.tiff",
                 "format": "tiff",
+                "sha256": checksum
             },
         )
         with open(os.path.join(self.tempdir.name, "tileset.json"), "w") as fh:
@@ -95,41 +97,12 @@ class TestHttpBackend(unittest.TestCase):
 
         self.assertTrue(np.array_equal(list(result.tiles())[0].numpy_array, data))
 
-    def test_numpy(self):
-        """
-        Generate a tileset consisting of a single NUMPY tile.  Deposit it where the HTTP server can
-        find the tileset, and fetch it.
-        """
-        image = slicedimage.TileSet(
-            ["x", "y", "ch", "hyb"],
-            {'ch': 1, 'hyb': 1},
-            (100, 100),
-        )
-
-        tile = slicedimage.Tile(
-            {
-                'x': (0.0, 0.01),
-                'y': (0.0, 0.01),
-            },
-            {
-                'hyb': 0,
-                'ch': 0,
-            },
-        )
-        tile.numpy_array = np.random.randint(0, 65535, size=(100, 100), dtype=np.uint16)
-        image.add_tile(tile)
-
-        partition_path = os.path.join(self.tempdir.name, "tileset.json")
-        partition_doc = slicedimage.v0_0_0.Writer().generate_partition_document(
-            image, partition_path)
-        with open(partition_path, "w") as fh:
-            json.dump(partition_doc, fh)
-
+        os.remove(os.path.join(self.tempdir.name, "tile.tiff"))
         result = slicedimage.Reader.parse_doc(
             "tileset.json",
             "http://localhost:{port}/".format(port=self.port))
 
-        self.assertTrue(np.array_equal(list(result.tiles())[0].numpy_array, tile.numpy_array))
+        self.assertTrue(np.array_equal(list(result.tiles())[0].numpy_array, data))
 
 
 if __name__ == "__main__":

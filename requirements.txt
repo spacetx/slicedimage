@@ -1,3 +1,4 @@
+diskcache
 enum34
 packaging
 numpy
