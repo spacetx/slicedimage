@@ -1,25 +1,23 @@
 import enum
-from pathlib import Path
-from ._compat import fspath
-
-
-def to_file_obj_or_str(obj):
-    """skimage methods only accept a file-like object or a string path.  This method converts a
-    file-like object, str, or pathlib.Path into a file-like object or a string path."""
-    if isinstance(obj, Path):
-        return fspath(obj)
-    return obj
 
 
 def tiff_reader():
-    # lazy load tifffile
-    import tifffile
+    from imageio import imread
 
     def reader(f):
-        with tifffile.TiffFile(to_file_obj_or_str(f)) as tiff:
-            return tiff.asarray(maxworkers=1)
+        return imread(f, format="tiff")
 
     return reader
+
+
+def png_reader():
+    from imageio import imread
+
+    def reader(f):
+        return imread(f, format="png")
+
+    return reader
+
 
 def numpy_reader():
     # lazy load numpy
@@ -33,12 +31,19 @@ def tiff_writer():
     Return a method that accepts (file, array) and saves it to the file.  File may be a file-like
     object, str, or pathlib.Path.
     """
-    # lazy load tifffile
-    import tifffile
+    from imageio import imwrite
 
     def writer(f, arr):
-        with tifffile.TiffWriter(to_file_obj_or_str(f)) as tiff:
-            return tiff.save(arr, datetime=None)
+        imwrite(f, arr, format="tiff")
+
+    return writer
+
+
+def png_writer():
+    from imageio import imwrite
+
+    def writer(f, arr):
+        return imwrite(f, arr, format="png")
 
     return writer
 
@@ -63,6 +68,7 @@ class ImageFormat(enum.Enum):
     """
     TIFF = (tiff_reader, tiff_writer, "tiff", {"tif"})
     NUMPY = (numpy_reader, numpy_writer, "npy", None)
+    PNG = (png_reader, png_writer, "png", None)
 
     def __init__(
             self,
